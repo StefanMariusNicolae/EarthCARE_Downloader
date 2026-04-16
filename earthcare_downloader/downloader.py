@@ -84,13 +84,14 @@ class EarthCAREDownloader:
 
         return access_token
 
-    def _get_datetime_filter(self, start_date, end_date):
+    @staticmethod
+    def _get_datetime_filter(start_date, end_date):
         if start_date:
-            start = pd.Timestamp(self.config.get("start_date"), tzinfo=None).isoformat(timespec='milliseconds')[:-6] + "Z"
+            start = pd.Timestamp(start_date, tzinfo=None).isoformat(timespec='seconds')[:-6] + "Z"
         else:
             start = ".."
         if end_date:
-            end = pd.Timestamp(self.config.get("end_date"), tzinfo=None).isoformat(timespec='milliseconds')[:-6] + "Z"
+            end = pd.Timestamp(end_date, tzinfo=None).isoformat(timespec='seconds')[:-6] + "Z"
         else:
             end = ".."
         datetime_filter = f"{start}/{end}" if start and end else (start or end)
