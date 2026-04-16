@@ -1,0 +1,9 @@
+output/
+configs/
+*.pyc
+__pycache__/
+.idea/
+venv/
+*.txt
+!README.md
+src/ECA_*_*/

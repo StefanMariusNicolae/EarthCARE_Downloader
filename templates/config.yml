@@ -1,0 +1,30 @@
+### EarthCARE Downloader Configuration
+
+# Offline token obtained from ESA MAAP Portal (https://iam.maap.eo.esa.int/realms/esa-maap/protocol/openid-connect/auth?response_type=code&scope=openid&client_id=esa-maap-portal&state=UlbMLyP7CDkc9V59-8iHqCJCMBE&redirect_uri=https%3A%2F%2Fportal.maap.eo.esa.int%2Fini%2Fservices%2Freg%2Fesamaap%2F&nonce=pXWt8UH-u-ptYlkaqhWOJq76qdZdgQweIM_TuGP-rBE&code_challenge=3SYw4DjbvpNTqPdI2X-Y3iiJPBbBGqwBVAslCHmNr9Y&code_challenge_method=S256)
+offline_token: "YOUR_TOKEN_HERE"
+
+product_type:  # Should be a list of ATLID products, as defined in the EarthCARE documentation
+  - "ATL_NOM_1B"
+  - "ATL_EBD_2A"
+  - "ATL_AER_2A"
+
+# Date range for filtering (ISO 8601 format - %Y-%m-%dT%H:%M:%SZ)
+# Other date formats might be automatically inferred, but support is not guaranteed
+start_date: "2025-05-16T00:00:00Z"
+end_date: "2025-05-30T23:59:59Z"
+
+# Bounding box for filtering [min_lon, min_lat, max_lon, max_lat]
+#bbox: [-180.0, -90.0, 180.0, 90.0]
+
+# Shorthand for bounding box filtering (takes priority over bounding box) [lon, lat, degrees +/- (lon), degrees +/- (lat)]
+# Rough approximation for mid-latitudes is 1.0 degrees ~= 111 km.
+distance_from_point: [26.01, 44.24, 1.0, 1.0]
+
+# Download settings
+download_folder: ""  # Provide as absolute path to the desired folder to avoid errors, with double backslashes on Windows machines
+max_items:  # Limits the number of items obtained from the API. WARNING: Can cause data to be missing from querying! Use carefully!
+unzip_files: True  # Unzip .zip files after downloading.
+delete_zips: True  # Delete .zip files after unarchiving. Only takes effect if 'unzip_files' is True
+save_download_metadata_csv: True  # Save .csv file with files downloaded in root folder of 'download_folder'
+number_of_parallel_downloads: 12  # Maximum number of parallel downloads (A hard limit of 64 is enforced). Set to 1 or None to disable parallel downloads.
+overwrite_existing_files: False  # Overwrite existing files in the download folder.
