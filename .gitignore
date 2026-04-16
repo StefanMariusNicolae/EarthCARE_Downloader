@@ -6,4 +6,3 @@ __pycache__/
 venv/
 *.txt
 !README.md
-earthcare_downloader/ECA_*_*/

@@ -216,6 +216,110 @@ class EarthCAREDownloader:
 
         return download_urls, filenames, download_product_types, start_datetimes, end_datetimes
 
+    def set_config(self, config_path=None, no_download=False, bbox=None, save_download_metadata_csv=None,
+                   download_dir=None, overwrite_cache=None, unzip_files=None, delete_zips=None,
+                   max_items=None, max_download_workers=None):
+        """
+        Convenience function to overwrite configs after the downloader has been initialized. All parameters are optional
+            and kwargs take priority over the config file (if provided).
+        :param config_path: Path to the new config file
+        :param no_download: Whether to skip downloading data
+        :param bbox: Bounding box for spatial filtering [min_lon, min_lat, max_lon, max_lat]
+        :param save_download_metadata_csv: Whether to save download metadata to a CSV file
+        :param download_dir: Absolute path to the directory where files will be saved
+        :param overwrite_cache: Whether to overwrite existing files in the download directory
+        :param unzip_files: Whether to unzip downloaded .zip files
+        :param delete_zips: Whether to delete .zip files after unzipping
+        :param max_items: Maximum number of items to retrieve from the API
+        :param max_download_workers: Number of parallel download processes
+        :return: None
+        """
+
+        # Check if the config file is provided and load it if it is. If not, fallback onto original settings
+        if config_path is not None:
+            self.config = get_config(config_path)
+
+        if bbox is not None:
+            self.bbox = bbox
+        else:
+            self.bbox = self._get_geo_filter()
+
+        # Token check still has to be done, especially if config file changed!
+        self.token = None
+        
+        if save_download_metadata_csv is not None:
+            self.save_download_metadata_csv = save_download_metadata_csv
+        else:
+            self.save_download_metadata_csv = self.config.get("save_download_metadata_csv", False)
+
+        # Here we assume that the token is already declared from the __init__ call. No need to redeclare it!
+        if self.offline_token == "YOUR_TOKEN_HERE":
+            logger.error("STAC token not found in credentials. You will not be able to download data!")
+            self.can_download = False
+        elif not no_download:
+            self.token = self._get_access_token()
+            self.can_download = True
+        
+        if no_download:
+            logger.info("Selecting 'no_download' option, skipping download(s).")
+            self.token = None
+            self.can_download = False
+
+        if download_dir is not None:
+            self.download_dir = download_dir
+        else:
+            self.download_dir = self.config.get("download_folder", os.path.join(ROOT_PROJECT_PATH, "output", "data"))
+            if self.download_dir == "":
+                self.download_dir = os.path.join(ROOT_PROJECT_PATH, "output", "data")
+
+        if overwrite_cache is not None:
+            self.overwrite_cache = overwrite_cache
+        else:
+            self.overwrite_cache = self.config.get("overwrite_existing_files", False)
+
+        if unzip_files is not None:
+            self.unzip_files = unzip_files
+        else:
+            self.unzip_files = self.config.get("unzip_files", True)
+
+        if delete_zips is not None:
+            self.delete_zips = delete_zips
+        else:
+            self.delete_zips = self.config.get("delete_zips", True)
+
+        if not self.unzip_files and self.delete_zips:
+            logger.warning("Unzipping files is disabled, but deleting zips is enabled. .zip files will not be deleted.")
+            self.delete_zips = False
+
+        # Opens the STAC catalogue in its root
+        if self.client is None:
+            self.client = Client.open(self.stac_url)
+
+        # Sets maximum number of items to be downloaded, default is None (no limit)
+        if max_items is not None:
+            self.max_items = max_items
+        else:
+            self.max_items = self.config.get("max_items", None)
+
+        if max_download_workers is not None:
+            self.max_download_workers = max_download_workers
+        else:
+            self.max_download_workers = self.config.get("number_of_parallel_downloads", 4)
+
+        if self.max_download_workers is None or self.max_download_workers <= 1:
+            self.parallel_download = False
+            self.max_download_workers = 1
+        else:
+            self.parallel_download = True
+
+        if self.max_download_workers > 64:
+            logger.warning("Number of parallel downloads is set to a very high value. Will default to 64 processes.")
+            self.max_download_workers = 64
+        
+        self._delete_internal_cached_results()
+        if not os.path.exists(self.download_dir):
+            os.makedirs(self.download_dir)
+
     def search(self, start_date=None, end_date=None, bbox=None):
         """Queries EarthCARE L1 and L2 products based on config."""
         product_types = self.config.get("product_type")
