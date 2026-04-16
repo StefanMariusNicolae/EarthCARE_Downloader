@@ -322,6 +322,8 @@ class EarthCAREDownloader:
 
     def list_config(self):
         """Lists all properties of the EarthCAREDownloader object."""
+        self.logger.info(f"Default start date is: {self.config.get('start_date')}")
+        self.logger.info(f"Default end date is: {self.config.get('end_date')}")
         self.logger.info(f"{self.offline_token=}")
         self.logger.info(f"{self.bbox=}")
         self.logger.info(f"{self.save_download_metadata_csv=}")
