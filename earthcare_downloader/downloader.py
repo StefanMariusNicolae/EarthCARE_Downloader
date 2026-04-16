@@ -13,7 +13,7 @@ from functools import partial
 
 logger.remove()
 logger.add(sys.stderr, level="INFO", format="{time} {level} {message}", colorize=True)
-ROOT_PROJECT_PATH = os.path.abspath(os.path.join(__file__, "..", ".."))
+ROOT_PROJECT_PATH = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 
 class EarthCAREDownloader:
     def __init__(self, config_path=os.path.join(ROOT_PROJECT_PATH, "configs", "config.yml"), no_download=False):
