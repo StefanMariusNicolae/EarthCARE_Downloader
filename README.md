@@ -53,7 +53,7 @@ The downloader is configured using the `configs/config.yml` file.
 You can run the downloader directly using the configuration from `configs/config.yml`:
 
 ```bash
-python src/downloader.py
+python earthcare_downloader/downloader.py
 ```
 
 ### Using as a module
@@ -61,7 +61,7 @@ python src/downloader.py
 You can also integrate `EarthCAREDownloader` into your own Python scripts:
 
 ```python
-from src.downloader import EarthCAREDownloader
+from earthcare_downloader.downloader import EarthCAREDownloader
 
 # Initialize the downloader (uses default config path)
 downloader = EarthCAREDownloader()

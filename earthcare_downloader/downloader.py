@@ -4,8 +4,8 @@ from loguru import logger
 from pystac_client import Client
 from tqdm import tqdm
 import sys
-from src.constants import STAC_URL, EARTHCARE_COLLECTIONS, IAM_URL, CLIENT_ID, CLIENT_SECRET
-from src.config_loader import get_config
+from earthcare_downloader.constants import STAC_URL, EARTHCARE_COLLECTIONS, IAM_URL, CLIENT_ID, CLIENT_SECRET
+from earthcare_downloader.config_loader import get_config
 import pandas as pd
 import multiprocessing as mp
 import zipfile
