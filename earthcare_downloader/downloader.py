@@ -320,6 +320,20 @@ class EarthCAREDownloader:
         if not os.path.exists(self.download_dir):
             os.makedirs(self.download_dir)
 
+    def list_config(self):
+        """Lists all properties of the EarthCAREDownloader object."""
+        self.logger.info(f"{self.offline_token=}")
+        self.logger.info(f"{self.bbox=}")
+        self.logger.info(f"{self.save_download_metadata_csv=}")
+        self.logger.info(f"{self.can_download=}")
+        self.logger.info(f"{self.download_dir=}")
+        self.logger.info(f"{self.overwrite_cache=}")
+        self.logger.info(f"{self.unzip_files=}")
+        self.logger.info(f"{self.delete_zips=}")
+        self.logger.info(f"{self.max_items=}")
+        self.logger.info(f"{self.max_download_workers=}")
+        self.logger.info(f"{self.parallel_download=}")
+
     def search(self, start_date=None, end_date=None, bbox=None):
         """Queries EarthCARE L1 and L2 products based on config."""
         product_types = self.config.get("product_type")
