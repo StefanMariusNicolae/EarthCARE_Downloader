@@ -276,7 +276,7 @@ class EarthCAREDownloader:
             for item in items[product_type]:
                 # Identify data assets - typically 'data' or specific file types
                 download_url = item.assets["product"].get_absolute_href()
-                filename = download_url.split('/')[-1] + ".zip"
+                filename = item.properties.get("title") + ".zip"
                 start_datetime = item.properties.get("start_datetime")
                 end_datetime = item.properties.get("end_datetime")
 
@@ -626,6 +626,59 @@ class EarthCAREDownloader:
                 )
         logger.success("Download finished successfully!")
 
+    def list_found_files(self, items=None, product_types=None):
+        """
+        Lists files found based on a given search result and product types.
+
+        This method processes search results to identify and collect files related to
+        specific product types. It allows customizing the search by providing specific
+        items and product types. If no items or product types are provided, it uses
+        default cached search results or considers all available product types.
+
+        Parameters:
+            items (Optional[Dict[str, List[Any]]]): A dictionary containing the search
+                results, categorized by product types. Defaults cached results if not provided.
+            product_types (Optional[List[str]]): A list of product types to filter the
+                search results. Each type is case-insensitive and automatically
+                converted to uppercase. Defaults all keys in the provided items if not provided.
+
+        Returns:
+            List[str]: A list of filenames corresponding to the found files. Filenames
+            are generated based on the 'title' property of search items, appended with
+            '.h5'.
+
+        Raises:
+            TypeError: If `product_types` is provided and is not of type list or str.
+        """
+        if items is None:
+            if self._search_results is None:
+                logger.error("No search results found. Please run a search first.")
+                return []
+        else:
+            items = self._search_results
+
+        if product_types is None:
+            product_types = list(items.keys())
+
+        if not isinstance(product_types, list):
+            product_types = [product_types]
+
+        product_types = [product_type.upper() for product_type in product_types]
+
+        found_files = []
+
+        for product_type in product_types:
+            if items[product_type] is not None:
+                logger.info(f"Found {len(items)} files for {product_type} products.")
+                for item in items:
+                    found_files.append(item.properties.get("title") + ".h5")
+            else:
+                logger.warning(f"No files found for {product_type} products. Check spelling or search criteria!")
+
+        logger.success(f"Found {len(found_files)} files.")
+
+        return found_files
+
     def list_downloaded_files(self, only_unzipped=True):
         """
         Lists the downloaded files from the specified directory with an option to filter only for unzipped files.
@@ -663,6 +716,35 @@ class EarthCAREDownloader:
                         else:
                             found_files[product_type].append(os.path.join(root, file))
         return found_files
+
+    def filter_found_items(self, keep_files, items=None):
+        """
+        Filters the given items to include only those found in the keep_files list. If
+        no items are provided, it defaults to filtering the existing cached search results.
+
+        Args:
+            keep_files (list): A list of file names to keep in the result.
+            items (dict, optional): A dictionary containing items grouped by product
+                type. If not provided, the existing cached search results are used.
+
+        Returns:
+            dict: A dictionary containing filtered items grouped by product type.
+        """
+        if items is None:
+            items = self._search_results
+
+        filtered_files = {}
+
+        product_types = list(items.keys())
+        for product_type in product_types:
+            for file in items[product_type]:
+                if file in keep_files:
+                    if product_type not in list(filtered_files.keys()):
+                        filtered_files[product_type] = [file]
+                    else:
+                        filtered_files[product_type].append(file)
+
+        return filtered_files
 
 if __name__ == "__main__":
     downloader = EarthCAREDownloader()
