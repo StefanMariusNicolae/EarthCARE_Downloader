@@ -16,6 +16,53 @@ logger.add(sys.stderr, level="INFO", format="{time} {level} {message}", colorize
 
 class EarthCAREDownloader:
     def __init__(self, config_path=os.path.join(ROOT_PROJECT_PATH, "configs", "default.yml"), no_download=False):
+        """
+        Initializes an instance with configuration, authentication, logging, directory setup, and
+        various download options for managing data workflow and interactions with STAC services.
+
+        Provided user methods are:
+            - set_config: Overwrites the default configuration with a new one, either through a new path or by kwargs.
+                e.g. EarthCAREDownloader.set_config(config_path="new_config.yml")
+                e.g. EarthCAREDownloader.set_config(bbox=[-122.4, 37.8, -122.3, 37.9], no_download=True, download_dir="new_dir"))
+            - list_config: Lists all properties of the EarthCAREDownloader object that are useful for searching and downloading.
+                Example output for the default config:
+                    2026-04-17T06:42:04.976859+0000 ERROR STAC token not found in credentials. You will not be able to download data!  -  because no token was declared in the config file.
+                    2026-04-17T06:42:05.107471+0000 INFO Default start date is: 2025-05-16T00:00:00Z  -  this is the default start date for the EarthCARE query in the config file.
+                    2026-04-17T06:42:05.109196+0000 INFO Default end date is: 2025-05-30T23:59:59Z  -  this is the default end date for the EarthCARE query in the config file.
+                    2026-04-17T06:42:05.110202+0000 INFO self.bbox=[25.01, 43.24, 27.01, 45.24]  -  this is the bounding box for the EarthCARE query in the config file.
+                    2026-04-17T06:42:05.111260+0000 INFO self.save_download_metadata_csv=True  -  whether or not to save the download_metadata.csv file (which shows what files should be downloaded)
+                    2026-04-17T06:42:05.112204+0000 INFO self.can_download=False  -  whether or not the EarthCARE query can be downloaded. Either user preference or consequence of missing token
+                    2026-04-17T06:42:05.113206+0000 INFO self.download_dir='/workspace/DIVA_Bucharest_Workshop/EarthCARE_Downloader/output/data'  -  the directory where files will be downloaded
+                    2026-04-17T06:42:05.114116+0000 INFO self.overwrite_cache=False  -  whether or not to overwrite existing files in the download directory
+                    2026-04-17T06:42:05.115032+0000 INFO self.unzip_files=True  -  whether or not to unzip downloaded .zip files
+                    2026-04-17T06:42:05.115936+0000 INFO self.delete_zips=True  -  whether or not to delete .zip files after unzipping (only takes effect if self.unzip_files=True)
+                    2026-04-17T06:42:05.116896+0000 INFO self.max_items=None  -  maximum number of items to retrieve from the API (user will be warned if they are missing data from queries)
+                    2026-04-17T06:42:05.117789+0000 INFO self.max_download_workers=12  -  maximum number of parallel download processes to spawn. Hard cap of 64 processes.
+                    2026-04-17T06:42:05.119357+0000 INFO self.parallel_download=True  -  whether or not to use parallel download processes
+            - search: Performs a search for items matching the specified criteria. 'start_date', 'end_date' and 'bbox'
+                      can be overwritten from the ones declared in the config file if kwargs are provided.
+                e.g. EarthCAREDownloader.search()
+                e.g. EarthCAREDownloader.search(start_date="2026-02-01", end_date="2026-02-15", bbox=[-122.4, 37.8, -122.3, 37.9])
+            - save_download_metadata: Saves the search results to a CSV file. Either uses the cached search results from running .search()
+                                      or similarly formatted dictionary, that is returned by the .search() function (for specific query).
+                e.g. EarthCAREDownloader.save_download_metadata()
+                e.g. EarthCAREDownloader.save_download_metadata(items=EarthCAREDownloader.search(start_date="2026-02-01", end_date="2026-02-15", bbox=[-122.4, 37.8, -122.3, 37.9]))
+            - download: Downloads the files specified in the 'items' parameter. If no 'items' are given, all cached files from the previous queries will be downloaded.
+                        Additional params:
+                            - 'silent' (bool, default False) prevents console output
+                            - 'disable_progress_bar' (bool) disables the progress bar for each file. False if single-threaded, True if multi-threaded.
+                            - 'overwrite_cache' (bool, default from config file) overwrites existing files in the download directory.
+                e.g. EarthCAREDownloader.download()
+                e.g. EarthCAREDownloader.download(items=EarthCAREDownloader.search(start_date="2026-02-01", end_date="2026-02-15", bbox=[-122.4, 37.8, -122.3, 37.9]))
+                e.g. EarthCAREDownloader.download(silent=True, disasble_progress_bar=True, overwrite_cache=True))
+        :param config_path: The path to the YAML configuration file defining settings for
+            the instance. Defaults to a file, "default.yml", located in a "configs" folder
+            under the project's root directory.
+        :type config_path: str or PathLike
+        :param no_download: Specifies whether downloads should be skipped. When set to
+            True, download-related functionalities will be disabled. Defaults to False.
+        :type no_download: bool
+        """
         self.config = get_config(config_path)
         self.stac_url = STAC_URL
         self.collections = EARTHCARE_COLLECTIONS
@@ -139,7 +186,7 @@ class EarthCAREDownloader:
     @staticmethod
     def _download_file(url, filename, product_type, download_dir, token, unzip, delete_zips, disable_progress_bar=False,
                        silent=False, overwrite_cache=False):
-        """Helper to download a single file with progress bar."""
+        """Helper to download a single file with or without progress bar."""
 
         folder_path = os.path.join(download_dir, product_type)
         file_path = os.path.join(folder_path, filename)
@@ -324,7 +371,16 @@ class EarthCAREDownloader:
             os.makedirs(self.download_dir)
 
     def list_config(self):
-        """Lists all properties of the EarthCAREDownloader object."""
+        """
+        Logs the current configuration settings of the instance.
+
+        This method outputs the instance's configuration settings such as the
+        default start and end dates, bounding box information, download directory,
+        flags for managing metadata, and other related configuration options to
+        the logger, primarily for debugging and information purposes.
+
+        :return: None
+        """
         self.logger.info(f"Default start date is: {self.config.get('start_date')}")
         self.logger.info(f"Default end date is: {self.config.get('end_date')}")
         self.logger.info(f"{self.bbox=}")
@@ -339,7 +395,25 @@ class EarthCAREDownloader:
         self.logger.info(f"{self.parallel_download=}")
 
     def search(self, start_date=None, end_date=None, bbox=None):
-        """Queries EarthCARE L1 and L2 products based on config."""
+        """
+        Search for products within specified configurations and filters, and returns the
+        matching items. The method handles configurations for product types, datetime filters,
+        and bounding boxes. If `start_date`, `end_date`, or `bbox` are not provided, it
+        defaults to the configurations defined in the class object. Searches are performed for
+        each product type, and results are cached before being returned.
+
+        :param start_date: The start of the date range for the search. Defaults to a class-wide
+            configuration setting if not provided.
+            Format expected: datetime-like str (pref. ISO8601 format) or datetime.
+        :param end_date: The end of the date range for the search. Defaults to a class-wide
+            configuration setting if not provided.
+            Format expected: datetime-like str (pref. ISO8601 format) or datetime..
+        :param bbox: Bounding box (min_lon, min_lat, max_lon, max_lat)
+            coordinates to spatially limit the search. Defaults to a
+            class-wide configuration setting if not provided.
+        :return: A dictionary of items found during the search operation.
+            Keys are product types, and values are lists of matching items.
+        """
         product_types = self.config.get("product_type")
 
         if not isinstance(product_types, list):
@@ -383,7 +457,20 @@ class EarthCAREDownloader:
         return items
 
     def save_download_metadata(self, items=None):
-        """Saves metadata of the downloaded items to a CSV file."""
+        """
+        Save metadata of downloaded items to a CSV file.
+
+        This method generates a CSV file containing metadata such as download
+        URLs, filenames, product types, start datetime, and end datetime for
+        the given items. If no items are provided, it uses the default search
+        results. The file is saved in the download directory with a timestamped
+        filename.
+
+        :param items: List of items for which metadata should be saved.
+                      Defaults to None, which uses cached search results.
+        :type items: Optional[List[Any]]
+        :return: None
+        """
 
         csv_file_path = os.path.join(self.download_dir, f"download_metadata_{pd.Timestamp.now().strftime('%Y-%m-%dT%H-%M-%S')}.csv")
 
@@ -404,7 +491,30 @@ class EarthCAREDownloader:
 
 
     def download(self, items=None, silent=None, disable_progress_bar=None, overwrite_cache=None):
-        """Downloads assets for the given list of STAC items."""
+        """
+        Download specified items or all items in the search results, handling metadata preparation,
+        progress bar configuration, and parallel or sequential downloading.
+
+        If no items are specified, this method will attempt to download all cached results from previous queries.
+
+        :param items: List of items to be downloaded. Defaults to None, which means
+            all search results will be downloaded.
+        :type items: list, optional
+        :param silent: If set to True, suppresses most logging output during
+            the download process. Defaults to None, which preserves the original
+            verbosity setting.
+        :type silent: bool, optional
+        :param disable_progress_bar: If set to True, disables the progress bar during
+            the download process. Defaults to None, which retains the existing
+            progress bar setting for single-threaded operation. The progress bar is
+            automatically disabled for parallel processing.
+        :type disable_progress_bar: bool, optional
+        :param overwrite_cache: If set to True, overwrites local cached files
+            during the download process. Defaults to None, which uses the instance's
+            existing cache overwriting policy from the config file.
+        :type overwrite_cache: bool, optional
+        :return: None
+        """
 
         if not self.can_download:
             logger.error("Cannot download data, skipping download.")
@@ -433,8 +543,8 @@ class EarthCAREDownloader:
                             token=self.token,
                             unzip=self.unzip_files,
                             delete_zips=self.delete_zips,
-                            disable_progress_bar=disable_progress_bar,
-                            silent=False if silent is None else silent,
+                            disable_progress_bar=disable_progress_bar if disable_progress_bar is not None else True,
+                            silent=silent if silent is not None else False,
                             overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache),
                     zip(download_urls, filenames, download_product_types)
                 )
@@ -451,13 +561,17 @@ class EarthCAREDownloader:
                     unzip=self.unzip_files,
                     delete_zips=self.delete_zips,
                     disable_progress_bar=disable_progress_bar if disable_progress_bar is not None else False,
-                    silent=False if silent is None else silent,
+                    silent=silent if silent is not None else False,
                     overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache
                 )
         logger.success("Download finished successfully!")
 
 if __name__ == "__main__":
     downloader = EarthCAREDownloader()
-    found_items = downloader.search()
-    # downloader.save_download_metadata()
+    found_items = downloader.search()  # Query with the default settings in config file
+    downloader.download(items=found_items)
+    restricted_search_items = downloader.search(start_date="2026-02-01", end_date="2026-02-02")
+    downloader.save_download_metadata(restricted_search_items)
+
+    # Download all cached items, from both queries
     downloader.download()
