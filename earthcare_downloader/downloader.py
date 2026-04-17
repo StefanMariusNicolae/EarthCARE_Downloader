@@ -669,7 +669,7 @@ class EarthCAREDownloader:
 
         for product_type in product_types:
             if items[product_type] is not None:
-                logger.info(f"Found {len(items)} files for {product_type} products.")
+                logger.info(f"Found {len(items[product_type])} files for {product_type} products.")
                 for item in items[product_type]:
                     found_files.append(item.properties.get("title") + ".h5")
             else:
