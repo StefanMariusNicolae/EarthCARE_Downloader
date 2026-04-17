@@ -641,14 +641,14 @@ class EarthCAREDownloader:
                         #ECA_EXBC_ATL_AER_2A_20260222T233519Z_20260223T014417Z_09881B
                         product_type = file[9:19]
                         if product_type not in list(found_files.keys()):
-                            found_files[product_type] = os.path.join(root, file)
+                            found_files[product_type] = [os.path.join(root, file)]
                         else:
                             found_files[product_type].append(os.path.join(root, file))
                 else:
                     if file.endswith(".zip") or file.endswith(".H5") or file.endswith(".h5") or file.endswith(".nc"):
                         product_type = file[9:19]
                         if product_type not in list(found_files.keys()):
-                            found_files[product_type] = os.path.join(root, file)
+                            found_files[product_type] = [os.path.join(root, file)]
                         else:
                             found_files[product_type].append(os.path.join(root, file))
         return found_files
