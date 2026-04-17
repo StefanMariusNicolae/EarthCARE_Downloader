@@ -432,6 +432,7 @@ class EarthCAREDownloader:
         self.logger.info(f"Default start date is: {self.config.get('start_date')}")
         self.logger.info(f"Default end date is: {self.config.get('end_date')}")
         self.logger.info(f"{self.bbox=}")
+        self.logger.info(f"{self.product_types=}")
         self.logger.info(f"{self.save_download_metadata_csv=}")
         self.logger.info(f"{self.can_download=}")
         self.logger.info(f"{self.download_dir=}")
