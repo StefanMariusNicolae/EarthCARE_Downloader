@@ -154,11 +154,11 @@ class EarthCAREDownloader:
     @staticmethod
     def _get_datetime_filter(start_date, end_date):
         if start_date:
-            start = pd.Timestamp(start_date, tzinfo=None).isoformat(timespec='milliseconds')[:-4] + "Z"
+            start = pd.Timestamp(start_date, tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             start = ".."
         if end_date:
-            end = pd.Timestamp(end_date, tzinfo=None).isoformat(timespec='milliseconds')[:-4] + "Z"
+            end = pd.Timestamp(end_date, tzinfo=None).strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             end = ".."
         datetime_filter = f"{start}/{end}" if start and end else (start or end)
