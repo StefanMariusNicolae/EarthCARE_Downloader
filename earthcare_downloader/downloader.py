@@ -338,7 +338,7 @@ class EarthCAREDownloader:
         if product_types is not None:
             self.product_types = product_types
         else:
-            self.product_types = self.config.get("product_types", [])
+            self.product_types = self.config.get("product_type", [])
         if not isinstance(self.product_types, list):
             self.product_types = [self.product_types]
 
