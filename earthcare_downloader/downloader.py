@@ -68,11 +68,18 @@ class EarthCAREDownloader:
         self.config = get_config(config_path)
         self.stac_url = STAC_URL
         self.collections = EARTHCARE_COLLECTIONS
-        self.offline_token = self.config.get("offline_token", "YOUR_TOKEN_HERE")
         self.logger = logger
+        self.client = Client.open(self.stac_url)  # Opens the STAC catalogue in its root
+
+        # Reading the config file for different params
+        self.offline_token = self.config.get("offline_token", "YOUR_TOKEN_HERE")
         self.bbox = self._get_geo_filter()
+        self.product_types = self.config.get("product_type", [])
+        if not isinstance(self.product_types, list):
+            self.product_types = [self.product_types]
+
+        # Get access token if downloading is required
         self.token = None
-        self.save_download_metadata_csv = self.config.get("save_download_metadata_csv", False)
         if self.offline_token == "YOUR_TOKEN_HERE":
             logger.warning("STAC token not found in credentials. You will not be able to download data!")
             self.can_download = False
@@ -83,6 +90,8 @@ class EarthCAREDownloader:
             logger.info("Selecting 'no_download' option, skipping download(s).")
             self.token = None
             self.can_download = False
+
+        # Sets ancillary parameters for downloading
         if self.config.get("download_folder", "") == "":
             self.download_dir = os.path.join(ROOT_PROJECT_PATH, "output", "data")
         else:
@@ -95,11 +104,10 @@ class EarthCAREDownloader:
             self.delete_zips = False
         if self.download_dir == "":
             self.download_dir = os.path.join(ROOT_PROJECT_PATH, "output", "data")
-        # Opens the STAC catalogue in its root
-        self.client = Client.open(self.stac_url)
         # Sets maximum number of items to be downloaded, default is None (no limit)
         self.max_items = self.config.get("max_items", None)
         self.max_download_workers = self.config.get("number_of_parallel_downloads", 4)
+        self.save_download_metadata_csv = self.config.get("save_download_metadata_csv", False)
         if self.max_download_workers is None or self.max_download_workers == 1:
             self.parallel_download = False
         else:
@@ -107,9 +115,12 @@ class EarthCAREDownloader:
         if self.max_download_workers > 64:
             logger.warning("Number of parallel downloads is set to a very high value. Will default to 64 processes.")
             self.max_download_workers = 64
-        self.search_results = {}
-        self.warned_about_missing_data = False
-        # self.max_items = 10
+
+        # Initialize and sanitize internal variables
+        self._search_results = {}
+        self._warned_about_missing_data = False
+
+        # Make sure download directory exists
         if not os.path.exists(self.download_dir):
             os.makedirs(self.download_dir)
 
@@ -185,7 +196,7 @@ class EarthCAREDownloader:
         return search_result
 
     def _delete_internal_cached_results(self):
-        self.search_results = {}
+        self._search_results = {}
 
     @staticmethod
     def _download_file(url, filename, product_type, download_dir, token, unzip, delete_zips, disable_progress_bar=False,
@@ -284,7 +295,7 @@ class EarthCAREDownloader:
         :return: None
         """
         if offline_token is None:
-            offline_token = getpass.getpass()
+            offline_token = getpass.getpass(prompt="Please enter your ESA MAAP Portal offline token:")
         self.offline_token = offline_token
         if self.offline_token == "YOUR_TOKEN_HERE":
             logger.warning("STAC token not found in credentials. You will not be able to download data!")
@@ -296,7 +307,7 @@ class EarthCAREDownloader:
 
     def set_config(self, config_path=None, no_download=False, bbox=None, save_download_metadata_csv=None,
                    download_dir=None, overwrite_cache=None, unzip_files=None, delete_zips=None,
-                   max_items=None, max_download_workers=None):
+                   max_items=None, max_download_workers=None, product_types=None):
         """
         Convenience function to overwrite configs after the downloader has been initialized. All parameters are optional
             and kwargs take priority over the config file (if provided).
@@ -312,9 +323,9 @@ class EarthCAREDownloader:
         :param delete_zips: Whether to delete .zip files after unzipping
         :param max_items: Maximum number of items to retrieve from the API
         :param max_download_workers: Number of parallel download processes
+        :param product_types: List of product types to download
         :return: None
         """
-
         # Check if the config file is provided and load it if it is. If not, fallback onto original settings
         if config_path is not None:
             self.config = get_config(config_path)
@@ -323,6 +334,13 @@ class EarthCAREDownloader:
             self.bbox = bbox
         else:
             self.bbox = self._get_geo_filter()
+
+        if product_types is not None:
+            self.product_types = product_types
+        else:
+            self.product_types = self.config.get("product_types", [])
+        if not isinstance(self.product_types, list):
+            self.product_types = [self.product_types]
 
         # Token check still has to be done, especially if config file changed!
         self.token = None
@@ -444,10 +462,7 @@ class EarthCAREDownloader:
         :return: A dictionary of items found during the search operation.
             Keys are product types, and values are lists of matching items.
         """
-        product_types = self.config.get("product_type")
-
-        if not isinstance(product_types, list):
-            product_types = [product_types]
+        product_types = self.product_types
         
         # Datetime handling: combine start and end or use a single string
         if not start_date:
@@ -469,19 +484,19 @@ class EarthCAREDownloader:
             items = list(search_result.items())
             results = search_result.matched()
 
-            if len(items) != results and self.warned_about_missing_data:
+            if len(items) != results and self._warned_about_missing_data:
                 logger.warning(
                     f"Number of earch results for {product_type} products do not match the number of items returned.\n"
                     f"Consider increasing 'max_items' in the config or using a more specific datetime filter, else data will be lost when downloading."
                 )
-                self.warned_about_missing_data = True
+                self._warned_about_missing_data = True
 
-            # Append to global search_results only if reasonable number of items are found
+            # Append to global _search_results only if reasonable number of items are found
             if len(items) < 100:
-                if self.search_results.get(product_type, None) is not None:
-                    self.search_results[product_type].extend(items)
+                if self._search_results.get(product_type, None) is not None:
+                    self._search_results[product_type].extend(items)
                 else:
-                    self.search_results[product_type] = items
+                    self._search_results[product_type] = items
                 logger.info(f"Found {len(items)} items matching the criteria.")
 
         return items
@@ -507,7 +522,7 @@ class EarthCAREDownloader:
         logger.info(f"Saving download metadata to {csv_file_path}...")
 
         if items is None:
-            items = self.search_results
+            items = self._search_results
 
         download_urls, filenames, download_product_types, start_datetimes, end_datetimes = self._prepare_download_metadata(items)
         download_metadata = pd.DataFrame({
@@ -551,7 +566,7 @@ class EarthCAREDownloader:
             return
 
         if items is None:
-            items = self.search_results
+            items = self._search_results
 
         logger.info(f"Preparing products for download...")
         download_urls, filenames, download_product_types, start_datetimes, end_datetimes = self._prepare_download_metadata(items)
