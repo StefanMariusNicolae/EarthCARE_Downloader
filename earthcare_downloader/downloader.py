@@ -521,7 +521,9 @@ class EarthCAREDownloader:
         :return: None
         """
 
-        csv_file_path = os.path.join(self.download_dir, f"download_metadata_{pd.Timestamp.now().strftime('%Y-%m-%dT%H-%M-%S')}.csv")
+        bbox_str = f"bbox-{self.bbox[0]:.2f}-{self.bbox[1]:.2f}-{self.bbox[2]:.2f}-{self.bbox[3]:.2f}"
+
+        csv_file_path = os.path.join(self.download_dir, f"download_metadata_{bbox_str}_{pd.Timestamp.now().strftime('%Y-%m-%dT%H-%M-%S')}.csv")
 
         logger.info(f"Saving download metadata to {csv_file_path}...")
 
