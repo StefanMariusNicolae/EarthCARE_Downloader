@@ -202,7 +202,7 @@ class EarthCAREDownloader:
         self._search_results = {}
 
     @staticmethod
-    def _download_file(url, filename, product_type, download_dir, token, unzip, delete_zips, disable_progress_bar=False,
+    def _download_file(url, filename, product_type, download_dir, token, unzip, delete_zips, bbox_str, disable_progress_bar=False,
                        silent=False, overwrite_cache=False):
         """Helper to download a single file with or without progress bar."""
 
@@ -578,6 +578,9 @@ class EarthCAREDownloader:
         if self.save_download_metadata_csv:
             self.save_download_metadata(items)
 
+        # Construct identifying string name
+        bbox_str = f"bbox-{str(self.bbox[0]):.2f}-{str(self.bbox[1]):.2f}-{str(self.bbox[2]):.2f}-{str(self.bbox[3]):.2f}"
+
         if self.parallel_download:
             no_of_workers = min(self.max_download_workers, len(download_urls))
             if disable_progress_bar is False or disable_progress_bar is None:
@@ -594,7 +597,8 @@ class EarthCAREDownloader:
                             delete_zips=self.delete_zips,
                             disable_progress_bar=disable_progress_bar if disable_progress_bar is not None else True,
                             silent=silent if silent is not None else False,
-                            overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache),
+                            overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache,
+                            bbox_str=bbox_str),
                     zip(download_urls, filenames, download_product_types)
                 )
         else:
@@ -611,7 +615,8 @@ class EarthCAREDownloader:
                     delete_zips=self.delete_zips,
                     disable_progress_bar=disable_progress_bar if disable_progress_bar is not None else False,
                     silent=silent if silent is not None else False,
-                    overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache
+                    overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache,
+                    bbox_str=bbox_str
                 )
         logger.success("Download finished successfully!")
 
