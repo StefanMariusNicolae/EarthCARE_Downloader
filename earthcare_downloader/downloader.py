@@ -56,6 +56,9 @@ class EarthCAREDownloader:
                 e.g. EarthCAREDownloader.download()
                 e.g. EarthCAREDownloader.download(items=EarthCAREDownloader.search(start_date="2026-02-01", end_date="2026-02-15", bbox=[-122.4, 37.8, -122.3, 37.9]))
                 e.g. EarthCAREDownloader.download(silent=True, disasble_progress_bar=True, overwrite_cache=True))
+            - list_downloaded_files: Lists all files that have been downloaded. By default, only lists unzipped files.
+                e.g. h5_files = EarthCAREDownloader.list_downloaded_files()
+                e.g. all_files = EarthCAREDownloader.list_downloaded_files(only_unzipped=False)
 
         :param config_path: The path to the YAML configuration file defining settings for
             the instance. Defaults to a file, "default.yml", located in a "configs" folder
@@ -611,6 +614,38 @@ class EarthCAREDownloader:
                     overwrite_cache=self.overwrite_cache if overwrite_cache is None else overwrite_cache
                 )
         logger.success("Download finished successfully!")
+
+    def list_downloaded_files(self, only_unzipped=True):
+        """
+        Lists the downloaded files from the specified directory with an option to filter only for unzipped files.
+
+        This method walks through the directory tree starting at the specified download directory (`self.download_dir`)
+        and identifies the downloaded files based on their extensions. If `only_unzipped` is set to True, only files
+        with extensions `.H5`, `.h5`, or `.nc` will be included. Otherwise, files with extensions `.zip`, `.H5`,
+        `.h5`, or `.nc` will be included. It extracts a product type from the file name and maps it to its
+        full file path.
+
+        :param only_unzipped: A boolean parameter to specify whether only unzipped files (with extensions `.H5`,
+                              `.h5`, `.nc`) should be listed. If False, zipped files (with `.zip` extension)
+                              are also included. Defaults to True.
+        :type only_unzipped: bool
+        :return: A dictionary where keys are the product types extracted from file names, and values are the
+                 full paths of the corresponding files.
+        :rtype: dict
+        """
+        found_files = {}
+        for root, dirs, files in os.walk(self.download_dir):
+            for file in files:
+                if only_unzipped:
+                    if file.endswith(".H5") or file.endswith(".h5") or file.endswith(".nc"):
+                        #ECA_EXBC_ATL_AER_2A_20260222T233519Z_20260223T014417Z_09881B
+                        product_type = file[9:19]
+                        found_files[product_type] = os.path.join(root, file)
+                else:
+                    if file.endswith(".zip") or file.endswith(".H5") or file.endswith(".h5") or file.endswith(".nc"):
+                        product_type = file[9:19]
+                        found_files[product_type] = os.path.join(root, file)
+        return found_files
 
 if __name__ == "__main__":
     downloader = EarthCAREDownloader()
