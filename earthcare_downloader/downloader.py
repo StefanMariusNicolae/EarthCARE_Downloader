@@ -676,6 +676,7 @@ class EarthCAREDownloader:
                 logger.warning(f"No files found for {product_type} products. Check spelling or search criteria!")
 
         logger.success(f"Found {len(found_files)} files.")
+        logger.info(f"Files found:\n{['\n'.join(found_files)]}")
 
         return found_files
 
