@@ -654,8 +654,8 @@ class EarthCAREDownloader:
             if self._search_results is None:
                 logger.error("No search results found. Please run a search first.")
                 return []
-        else:
-            items = self._search_results
+            else:
+                items = self._search_results
 
         if product_types is None:
             product_types = list(items.keys())
