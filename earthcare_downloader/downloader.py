@@ -579,7 +579,7 @@ class EarthCAREDownloader:
             self.save_download_metadata(items)
 
         # Construct identifying string name
-        bbox_str = f"bbox-{str(self.bbox[0]):.2f}-{str(self.bbox[1]):.2f}-{str(self.bbox[2]):.2f}-{str(self.bbox[3]):.2f}"
+        bbox_str = f"bbox-{self.bbox[0]:.2f}-{self.bbox[1]:.2f}-{self.bbox[2]:.2f}-{self.bbox[3]:.2f}"
 
         if self.parallel_download:
             no_of_workers = min(self.max_download_workers, len(download_urls))
