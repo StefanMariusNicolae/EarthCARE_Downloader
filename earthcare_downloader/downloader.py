@@ -206,7 +206,7 @@ class EarthCAREDownloader:
                        silent=False, overwrite_cache=False):
         """Helper to download a single file with or without progress bar."""
 
-        folder_path = os.path.join(download_dir, product_type)
+        folder_path = os.path.join(download_dir, bbox_str, product_type)
         file_path = os.path.join(folder_path, filename)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
