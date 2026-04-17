@@ -55,6 +55,7 @@ class EarthCAREDownloader:
                 e.g. EarthCAREDownloader.download()
                 e.g. EarthCAREDownloader.download(items=EarthCAREDownloader.search(start_date="2026-02-01", end_date="2026-02-15", bbox=[-122.4, 37.8, -122.3, 37.9]))
                 e.g. EarthCAREDownloader.download(silent=True, disasble_progress_bar=True, overwrite_cache=True))
+
         :param config_path: The path to the YAML configuration file defining settings for
             the instance. Defaults to a file, "default.yml", located in a "configs" folder
             under the project's root directory.
@@ -272,6 +273,8 @@ class EarthCAREDownloader:
         """
         Convenience function to overwrite configs after the downloader has been initialized. All parameters are optional
             and kwargs take priority over the config file (if provided).
+        NOTE: Changing the config resets the internal search results cache, as it is no longer valid.
+
         :param config_path: Path to the new config file
         :param no_download: Whether to skip downloading data
         :param bbox: Bounding box for spatial filtering [min_lon, min_lat, max_lon, max_lat]
