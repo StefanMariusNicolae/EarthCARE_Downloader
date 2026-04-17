@@ -73,7 +73,7 @@ class EarthCAREDownloader:
         self.token = None
         self.save_download_metadata_csv = self.config.get("save_download_metadata_csv", False)
         if self.offline_token == "YOUR_TOKEN_HERE":
-            logger.error("STAC token not found in credentials. You will not be able to download data!")
+            logger.warning("STAC token not found in credentials. You will not be able to download data!")
             self.can_download = False
         elif not no_download:
             self.token = self._get_access_token()
@@ -127,10 +127,12 @@ class EarthCAREDownloader:
         response = requests.post(url, data=data)
         response.raise_for_status()
         access_token = response.json().get("access_token")
-        logger.info("Access token retrieved successfully.")
+        logger.success("Access token retrieved successfully.")
 
         if not access_token:
-            raise RuntimeError("Failed to retrieve access token.")
+            logger.error("Failed to retrieve access token from authentication server. Will revert to no download!")
+            self.can_download = False
+            self.token = None
 
         return access_token
 
@@ -267,6 +269,28 @@ class EarthCAREDownloader:
 
         return download_urls, filenames, download_product_types, start_datetimes, end_datetimes
 
+    def set_token(self, offline_token, no_download=False):
+        """
+        Sets the offline token and determines the download permissions based on the
+        provided token. Set 'no_download' to True to disable downloading.
+
+        :param offline_token: The token required for authentication. Provide a valid
+            offline token as obtained from the ESA MAAP Portal.
+        :type offline_token: str
+        :param no_download: Optional flag indicating whether downloading should be
+            disabled regardless of token validity. Defaults to False.
+        :type no_download: bool
+        :return: None
+        """
+        self.offline_token = offline_token
+        if self.offline_token == "YOUR_TOKEN_HERE":
+            logger.warning("STAC token not found in credentials. You will not be able to download data!")
+            self.token = None
+            self.can_download = False
+        elif not no_download:
+            self.token = self._get_access_token()
+            self.can_download = True
+
     def set_config(self, config_path=None, no_download=False, bbox=None, save_download_metadata_csv=None,
                    download_dir=None, overwrite_cache=None, unzip_files=None, delete_zips=None,
                    max_items=None, max_download_workers=None):
@@ -307,7 +331,7 @@ class EarthCAREDownloader:
 
         # Here we assume that the token is already declared from the __init__ call. No need to redeclare it!
         if self.offline_token == "YOUR_TOKEN_HERE":
-            logger.error("STAC token not found in credentials. You will not be able to download data!")
+            logger.warning("STAC token not found in credentials. You will not be able to download data!")
             self.can_download = False
         elif not no_download:
             self.token = self._get_access_token()
