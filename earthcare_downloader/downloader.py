@@ -13,7 +13,11 @@ from functools import partial
 import getpass
 
 logger.remove()
-logger.add(sys.stderr, level="INFO", format="[{level}] {time}: {message}", colorize=True)
+logger.add(
+    sys.stderr,
+    level="INFO",
+    format="[<level>{level:<8}]</level> | <cyan>{name}</cyan> | <green>{time}</green>: <level>{message}</level>",
+    colorize=True)
 
 class EarthCAREDownloader:
     def __init__(self, config_path=os.path.join(ROOT_PROJECT_PATH, "configs", "default.yml"), no_download=False):
