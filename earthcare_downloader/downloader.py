@@ -4,7 +4,7 @@ from loguru import logger
 from pystac_client import Client
 from tqdm import tqdm
 import sys
-from earthcare_downloader.constants import STAC_URL, EARTHCARE_COLLECTIONS, IAM_URL, CLIENT_ID, CLIENT_SECRET
+from earthcare_downloader.constants import STAC_URL, EARTHCARE_COLLECTIONS, IAM_URL, CLIENT_ID, CLIENT_SECRET, ROOT_PROJECT_PATH
 from earthcare_downloader.config_loader import get_config
 import pandas as pd
 import multiprocessing as mp
@@ -13,10 +13,9 @@ from functools import partial
 
 logger.remove()
 logger.add(sys.stderr, level="INFO", format="{time} {level} {message}", colorize=True)
-ROOT_PROJECT_PATH = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 
 class EarthCAREDownloader:
-    def __init__(self, config_path=os.path.join(ROOT_PROJECT_PATH, "configs", "config.yml"), no_download=False):
+    def __init__(self, config_path=os.path.join(ROOT_PROJECT_PATH, "configs", "default.yml"), no_download=False):
         self.config = get_config(config_path)
         self.stac_url = STAC_URL
         self.collections = EARTHCARE_COLLECTIONS
@@ -35,7 +34,10 @@ class EarthCAREDownloader:
             logger.info("Selecting 'no_download' option, skipping download(s).")
             self.token = None
             self.can_download = False
-        self.download_dir = self.config.get("download_folder", os.path.join(ROOT_PROJECT_PATH, "data"))
+        if self.config.get("download_folder", "") == "":
+            self.download_dir = os.path.join(ROOT_PROJECT_PATH, "output", "data")
+        else:
+            self.download_dir = self.config.get("download_folder")
         self.overwrite_cache = self.config.get("overwrite_existing_files", False)
         self.unzip_files = self.config.get("unzip_files", True)
         self.delete_zips = self.config.get("delete_zips", True)

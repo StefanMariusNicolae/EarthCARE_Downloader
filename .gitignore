@@ -1,5 +1,6 @@
 output/
-configs/
+configs/*
+!configs/default.yml
 *.pyc
 __pycache__/
 .idea/
