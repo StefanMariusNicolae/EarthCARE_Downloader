@@ -16,7 +16,7 @@ logger.remove()
 logger.add(
     sys.stderr,
     level="INFO",
-    format="[<level>{level:<8}]</level> | <cyan>{name}</cyan> | <green>{time}</green>: <level>{message}</level>",
+    format="[<level>{level:<8}]</level> | <cyan>{name}</cyan> | <green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>: <level>{message}</level>",
     colorize=True)
 
 class EarthCAREDownloader:
