@@ -12,7 +12,7 @@ import zipfile
 from functools import partial
 
 logger.remove()
-logger.add(sys.stderr, level="INFO", format="{time} {level} {message}", colorize=True)
+logger.add(sys.stderr, level="INFO", format="[{level}] {time}: {message}", colorize=True)
 
 class EarthCAREDownloader:
     def __init__(self, config_path=os.path.join(ROOT_PROJECT_PATH, "configs", "default.yml"), no_download=False):
