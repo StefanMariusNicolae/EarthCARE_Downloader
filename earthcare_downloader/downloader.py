@@ -677,7 +677,7 @@ class EarthCAREDownloader:
 
         logger.success(f"Found {len(found_files)} files.")
 
-        files_found_str = ['\n'.join(found_files)]
+        files_found_str = '\n'.join(found_files)
         logger.info(f"Files found:\n{files_found_str}")
 
         return found_files
