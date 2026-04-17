@@ -10,6 +10,7 @@ import pandas as pd
 import multiprocessing as mp
 import zipfile
 from functools import partial
+import getpass
 
 logger.remove()
 logger.add(sys.stderr, level="INFO", format="[{level}] {time}: {message}", colorize=True)
@@ -269,7 +270,7 @@ class EarthCAREDownloader:
 
         return download_urls, filenames, download_product_types, start_datetimes, end_datetimes
 
-    def set_token(self, offline_token, no_download=False):
+    def set_token(self, offline_token=None, no_download=False):
         """
         Sets the offline token and determines the download permissions based on the
         provided token. Set 'no_download' to True to disable downloading.
@@ -282,6 +283,8 @@ class EarthCAREDownloader:
         :type no_download: bool
         :return: None
         """
+        if offline_token is None:
+            offline_token = getpass.getpass()
         self.offline_token = offline_token
         if self.offline_token == "YOUR_TOKEN_HERE":
             logger.warning("STAC token not found in credentials. You will not be able to download data!")
