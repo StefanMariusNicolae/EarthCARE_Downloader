@@ -122,6 +122,7 @@ class EarthCAREDownloader:
         if self.max_download_workers > 64:
             logger.warning("Number of parallel downloads is set to a very high value. Will default to 64 processes.")
             self.max_download_workers = 64
+        self.allow_duplicates = self.config.get("allow_duplicates", False)
 
         # Initialize and sanitize internal variables
         self._search_results = {}
@@ -288,6 +289,29 @@ class EarthCAREDownloader:
 
         return download_urls, filenames, download_product_types, start_datetimes, end_datetimes
 
+    @staticmethod
+    def _remove_duplicates(items):
+        """
+        Removes duplicates from 'items' based on the 'sat:absolute_orbit' property.
+        Keeps the latest available processed version for each duplicate occurrence.
+        """
+        product_types = list(items.keys())
+        unique_items = {}
+        for product_type in product_types:
+            for item in items[product_type]:
+                orbit_id = item.properties.get("sat:absolute_orbit")
+                if unique_items[product_type].get(orbit_id, None) is None:
+                    unique_items[product_type][orbit_id] = [item]
+                else:
+                    unique_items[product_type][orbit_id].append(item)
+        for product_type in product_types:
+            for orbit_id in list(unique_items[product_type].keys()):
+                unique_items[product_type][orbit_id] = sorted(unique_items[product_type][orbit_id], key=lambda x: x.properties.get("processing:datetime"), reverse=True)[0]
+        reconstructed_items = {}
+        for product_type in product_types:
+            reconstructed_items[product_type] = list(unique_items[product_type].values())
+        return reconstructed_items
+
     def set_token(self, offline_token=None, no_download=False):
         """
         Sets the offline token and determines the download permissions based on the
@@ -314,7 +338,7 @@ class EarthCAREDownloader:
 
     def set_config(self, config_path=None, no_download=False, bbox=None, save_download_metadata_csv=None,
                    download_dir=None, overwrite_cache=None, unzip_files=None, delete_zips=None,
-                   max_items=None, max_download_workers=None, product_types=None):
+                   max_items=None, max_download_workers=None, product_types=None, allow_duplicates=None):
         """
         Convenience function to overwrite configs after the downloader has been initialized. All parameters are optional
             and kwargs take priority over the config file (if provided).
@@ -420,6 +444,10 @@ class EarthCAREDownloader:
         if self.max_download_workers > 64:
             logger.warning("Number of parallel downloads is set to a very high value. Will default to 64 processes.")
             self.max_download_workers = 64
+        if allow_duplicates is not None:
+            self.allow_duplicates = allow_duplicates
+        else:
+            self.allow_duplicates = self.config.get("allow_duplicates", False)
         
         self._delete_internal_cached_results()
         if not os.path.exists(self.download_dir):
@@ -499,13 +527,17 @@ class EarthCAREDownloader:
                 )
                 self._warned_about_missing_data = True
 
-            # Append to global _search_results only if reasonable number of items are found
-            if len(items) < 100:
-                if self._search_results.get(product_type, None) is not None:
-                    self._search_results[product_type].extend(items)
-                else:
-                    self._search_results[product_type] = items
-                logger.info(f"Found {len(items)} items matching the criteria.")
+            if self._search_results.get(product_type, None) is not None:
+                self._search_results[product_type].extend(items)
+            else:
+                self._search_results[product_type] = items
+            logger.info(f"Found {len(items)} items matching the criteria.")
+
+        if not self.allow_duplicates:
+            before_duplicate_removal = sum([len(items[key]) for key in list(items.keys())])
+            items = self._remove_duplicates(items)
+            after_duplicate_removal = sum([len(items[key]) for key in list(items.keys())])
+            logger.info(f"Removed {before_duplicate_removal - after_duplicate_removal} duplicate items.")
 
         return items
 

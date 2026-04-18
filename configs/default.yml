@@ -28,4 +28,5 @@ delete_zips: True  # Delete .zip files after unarchiving. Only takes effect if '
 save_download_metadata_csv: True  # Save .csv file with files downloaded in root folder of 'download_folder'
 number_of_parallel_downloads: 12  # Maximum number of parallel downloads (A hard limit of 64 is enforced). Set to 1 or None to disable parallel downloads.
 overwrite_existing_files: False  # Overwrite existing files in the download folder.
-
+allow_duplicates: False  # Whether to allow for duplicate files (different processing time) in the download folder.
+                         # This does account for different baselines, so different baselines will be downloaded.
