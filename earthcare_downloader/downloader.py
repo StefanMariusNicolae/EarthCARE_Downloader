@@ -533,17 +533,20 @@ class EarthCAREDownloader:
             return_items[product_type] = items
 
         if not self.allow_duplicates:
+            logger.info("Removing duplicate items...")
             before_duplicate_removal = sum([len(return_items[key]) for key in list(return_items.keys())])
             return_items = self._remove_duplicates(return_items)
-
             after_duplicate_removal = sum([len(return_items[key]) for key in list(return_items.keys())])
-            logger.info(f"Removed {before_duplicate_removal - after_duplicate_removal} duplicate items.")
+            logger.info(f"Removed {before_duplicate_removal - after_duplicate_removal} duplicate items from all product types.")
 
         for product_type in product_types:
             if self._search_results.get(product_type, None) is not None:
                 self._search_results[product_type].extend(return_items[product_type])
             else:
-                self._search_results[product_type] = return_items
+                self._search_results[product_type] = return_items[product_type]
+
+        logger.success(
+            f"Search completed. Found {sum([len(items) for items in return_items.values()])} items in total.")
 
         return return_items
 
