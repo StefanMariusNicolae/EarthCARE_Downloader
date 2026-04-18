@@ -510,7 +510,7 @@ class EarthCAREDownloader:
 
         datetime_filter = self._get_datetime_filter(start_date, end_date)
 
-        items = {}
+        return_items = {}
 
         for product_type in product_types:
             logger.info(f"Searching for {product_type} products...")
@@ -531,15 +531,16 @@ class EarthCAREDownloader:
                 self._search_results[product_type].extend(items)
             else:
                 self._search_results[product_type] = items
+            return_items[product_type] = items
             logger.info(f"Found {len(items)} items matching the criteria.")
 
         if not self.allow_duplicates:
-            before_duplicate_removal = sum([len(items[key]) for key in list(items.keys())])
-            items = self._remove_duplicates(items)
-            after_duplicate_removal = sum([len(items[key]) for key in list(items.keys())])
+            before_duplicate_removal = sum([len(return_items[key]) for key in list(return_items.keys())])
+            return_items = self._remove_duplicates(return_items)
+            after_duplicate_removal = sum([len(return_items[key]) for key in list(return_items.keys())])
             logger.info(f"Removed {before_duplicate_removal - after_duplicate_removal} duplicate items.")
 
-        return items
+        return return_items
 
     def save_download_metadata(self, items=None):
         """
