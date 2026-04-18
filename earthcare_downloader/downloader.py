@@ -667,7 +667,7 @@ class EarthCAREDownloader:
                 )
         logger.success("Download finished successfully!")
 
-    def list_found_files(self, items=None, product_types=None):
+    def list_found_files(self, items=None, product_types=None, display_all_files=False):
         """
         Lists files found based on a given search result and product types.
 
@@ -682,6 +682,8 @@ class EarthCAREDownloader:
             product_types (Optional[List[str]]): A list of product types to filter the
                 search results. Each type is case-insensitive and automatically
                 converted to uppercase. Defaults all keys in the provided items if not provided.
+            display_all_files (Optional, bool): A boolean parameter to specify whether all files found should be
+                displayed in the console. Defaults to False.
 
         Returns:
             List[str]: A list of filenames corresponding to the found files. Filenames
@@ -718,47 +720,44 @@ class EarthCAREDownloader:
 
         logger.success(f"Found {len(found_files)} files.")
 
-        files_found_str = '\n'.join(found_files)
-        logger.info(f"Files found:\n{files_found_str}")
+        if display_all_files:
+            files_found_str = '\n'.join(found_files)
+            logger.info(f"Files found:\n{files_found_str}")
 
         return found_files
 
-    def list_downloaded_files(self, only_unzipped=True):
+    def list_downloaded_files(self, only_unzipped=True, display_all_files=False):
         """
         Lists the downloaded files from the specified directory with an option to filter only for unzipped files.
 
         This method walks through the directory tree starting at the specified download directory (`self.download_dir`)
         and identifies the downloaded files based on their extensions. If `only_unzipped` is set to True, only files
         with extensions `.H5`, `.h5`, or `.nc` will be included. Otherwise, files with extensions `.zip`, `.H5`,
-        `.h5`, or `.nc` will be included. It extracts a product type from the file name and maps it to its
-        full file path.
+        `.h5`, or `.nc` will be included.
 
         :param only_unzipped: A boolean parameter to specify whether only unzipped files (with extensions `.H5`,
                               `.h5`, `.nc`) should be listed. If False, zipped files (with `.zip` extension)
                               are also included. Defaults to True.
         :type only_unzipped: bool
-        :return: A dictionary where keys are the product types extracted from file names, and values are the
-                 full paths of the corresponding files.
+        :param display_all_files: A boolean parameter to specify whether all files found in the directory should be
+                                  displayed in the console. Defaults to False.
+        :return: A list of downloaded file paths found in 'download_folder'.
         :rtype: dict
         """
-        found_files = {}
+        found_files = []
         for root, dirs, files in os.walk(self.download_dir):
             for file in files:
                 if only_unzipped:
                     if file.endswith(".H5") or file.endswith(".h5") or file.endswith(".nc"):
-                        #ECA_EXBC_ATL_AER_2A_20260222T233519Z_20260223T014417Z_09881B
-                        product_type = file[9:19]
-                        if product_type not in list(found_files.keys()):
-                            found_files[product_type] = [os.path.join(root, file)]
-                        else:
-                            found_files[product_type].append(os.path.join(root, file))
+                        found_files.append(os.path.join(root, file))
                 else:
                     if file.endswith(".zip") or file.endswith(".H5") or file.endswith(".h5") or file.endswith(".nc"):
-                        product_type = file[9:19]
-                        if product_type not in list(found_files.keys()):
-                            found_files[product_type] = [os.path.join(root, file)]
-                        else:
-                            found_files[product_type].append(os.path.join(root, file))
+                        found_files.append(os.path.join(root, file))
+
+        if display_all_files:
+            files_found_str = '\n'.join(found_files)
+            logger.info(f"Files found:\n{files_found_str}")
+
         return found_files
 
     def filter_found_items(self, keep_files, items=None):
