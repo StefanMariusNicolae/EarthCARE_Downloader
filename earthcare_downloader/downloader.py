@@ -300,6 +300,8 @@ class EarthCAREDownloader:
         for product_type in product_types:
             for item in items[product_type]:
                 orbit_id = item.properties.get("sat:absolute_orbit")
+                if product_type not in list(unique_items.keys()):
+                    unique_items[product_type] = {}
                 if unique_items[product_type].get(orbit_id, None) is None:
                     unique_items[product_type][orbit_id] = [item]
                 else:
