@@ -781,7 +781,7 @@ class EarthCAREDownloader:
         product_types = list(items.keys())
         for product_type in product_types:
             for file in items[product_type]:
-                if file in keep_files:
+                if file.properties.get('title') + ".h5" in keep_files:
                     if product_type not in list(filtered_files.keys()):
                         filtered_files[product_type] = [file]
                     else:
